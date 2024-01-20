@@ -6,8 +6,11 @@ import {
   Param,
   Post,
   Put,
-  UseGuards, UsePipes, ValidationPipe
-} from "@nestjs/common";
+  Query,
+  UseGuards,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ArticleService } from '@app/article/article.service';
 import { AuthGuard } from '@app/user/guards/auth.guard';
 import { UserEntity } from '@app/user/user.entity';
@@ -15,10 +18,20 @@ import { CreateArticleDto } from '@app/article/dto/createArticle.dto';
 import { User } from '@app/user/decorators/user.decorator';
 import { ArticleResponseInterface } from '@app/article/types/articleResponse.interface';
 import { UpdateArticleDto } from '@app/article/dto/updateArticle.dto';
+import { ArticlesResponseInterface } from "@app/article/types/articlesResponse.interface";
 
 @Controller('articles')
 export class ArticleController {
   constructor(private readonly articleService: ArticleService) {}
+
+  @Get()
+  async findAll(
+    @User('id') currentUserId: number,
+    @Query() query: any,
+  ): Promise<ArticlesResponseInterface> {
+    return await this.articleService.findAll(currentUserId, query);
+  }
+
   @Post()
   @UseGuards(AuthGuard)
   @UsePipes(new ValidationPipe())
@@ -62,6 +75,32 @@ export class ArticleController {
       slug,
       currentUserId,
       updateArticleDto,
+    );
+    return this.articleService.buildArticleResponse(article);
+  }
+
+  @Post(':slug/favorite')
+  @UseGuards(AuthGuard)
+  async addArticleToFavorite(
+    @User('id') currentUserId: number,
+    @Param('slug') slug: string,
+  ): Promise<ArticleResponseInterface> {
+    const article = await this.articleService.addArticleToFavorite(
+      slug,
+      currentUserId,
+    );
+    return this.articleService.buildArticleResponse(article);
+  }
+
+  @Delete(':slug/favorite')
+  @UseGuards(AuthGuard)
+  async deleteArticleToFavorite(
+    @User('id') currentUserId: number,
+    @Param('slug') slug: string,
+  ): Promise<ArticleResponseInterface> {
+    const article = await this.articleService.deleteArticleToFavorite(
+      slug,
+      currentUserId,
     );
     return this.articleService.buildArticleResponse(article);
   }
